@@ -1,21 +1,22 @@
-﻿using Bulky.DataAccess.Data;
-using Bulky.Models;
+﻿using BulkyBook.DataAccess.Repository.Interfaces;
+using BulkyBook.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BulkyWeb.Controllers
+namespace BulkyBookWeb.Areas.Admin.Controllers
 {
+    [Area("Admin")]
     public class CategoryController : Controller
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public CategoryController(ApplicationDbContext dbContext)
+        public CategoryController(IUnitOfWork unitOfWork)
         {
-            _dbContext = dbContext;
+            _unitOfWork = unitOfWork;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var categoryList = _dbContext.Categories.ToList();
+            var categoryList = (await _unitOfWork.CategoryRepository.GetAll()).ToList();
 
             return View(categoryList);
         }
@@ -35,8 +36,8 @@ namespace BulkyWeb.Controllers
 
             if (ModelState.IsValid)
             {
-                await _dbContext.Categories.AddAsync(category);
-                await _dbContext.SaveChangesAsync();
+                _unitOfWork.CategoryRepository.Add(category);
+                await _unitOfWork.SaveAsync();
 
                 TempData["SuccessMessage"] = "New category has been successfully created";
 
@@ -46,14 +47,14 @@ namespace BulkyWeb.Controllers
             return View();
         }
 
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             if (id == 0)
             {
                 return NotFound();
             }
 
-            var category = _dbContext.Categories.Find(id);
+            var category = await _unitOfWork.CategoryRepository.GetFirstOrDefault(p => p.Id == id);
             if (category is null)
             {
                 return NotFound();
@@ -67,8 +68,8 @@ namespace BulkyWeb.Controllers
         {
             if (ModelState.IsValid)
             {
-                _dbContext.Categories.Update(category);
-                await _dbContext.SaveChangesAsync();
+                _unitOfWork.CategoryRepository.Update(category);
+                await _unitOfWork.SaveAsync();
 
                 TempData["SuccessMessage"] = "Category has been successfully updated";
 
@@ -78,14 +79,14 @@ namespace BulkyWeb.Controllers
             return View();
         }
 
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             if (id == 0)
             {
                 return NotFound();
             }
 
-            var category = _dbContext.Categories.Find(id);
+            var category = await _unitOfWork.CategoryRepository.GetFirstOrDefault(p => p.Id == id);
             if (category is null)
             {
                 return NotFound();
@@ -102,8 +103,8 @@ namespace BulkyWeb.Controllers
                 return BadRequest();
             }
 
-            _dbContext.Categories.Remove(category);
-            await _dbContext.SaveChangesAsync();
+            _unitOfWork.CategoryRepository.Delete(category);
+            await _unitOfWork.SaveAsync();
 
             TempData["SuccessMessage"] = "Category has been successfully deleted";
 
