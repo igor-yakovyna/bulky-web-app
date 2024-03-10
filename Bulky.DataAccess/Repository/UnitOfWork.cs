@@ -7,6 +7,7 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _dbContext;
     private ICategoryRepository? _categoryRepository;
+    private IProductRepository? _productRepository;
 
     public UnitOfWork(ApplicationDbContext dbContext)
     {
@@ -14,6 +15,8 @@ public class UnitOfWork : IUnitOfWork
     }
 
     public ICategoryRepository CategoryRepository => _categoryRepository ??= new CategoryRepository(_dbContext);
+
+    public IProductRepository ProductRepository => _productRepository ??= new ProductRepository(_dbContext);
 
     public async Task SaveAsync()
     {
