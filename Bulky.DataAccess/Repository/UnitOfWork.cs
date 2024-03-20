@@ -9,6 +9,8 @@ public class UnitOfWork : IUnitOfWork
     private ICategoryRepository? _categoryRepository;
     private IProductRepository? _productRepository;
     private ICompanyRepository? _companyRepository;
+    private IShoppingCartRepository? _shoppingCartRepository;
+    private IApplicationUserRepository? _applicationUserRepository;
 
     public UnitOfWork(ApplicationDbContext dbContext)
     {
@@ -20,6 +22,11 @@ public class UnitOfWork : IUnitOfWork
     public IProductRepository ProductRepository => _productRepository ??= new ProductRepository(_dbContext);
 
     public ICompanyRepository CompanyRepository => _companyRepository ??= new CompanyRepository(_dbContext);
+
+    public IShoppingCartRepository ShoppingCartRepository => _shoppingCartRepository ??= new ShoppingCartRepository(_dbContext);
+
+    public IApplicationUserRepository ApplicationUserRepository => _applicationUserRepository ??= new ApplicationUserRepository(_dbContext);
+
 
     public async Task SaveAsync()
     {

@@ -16,9 +16,15 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet = _dbContext.Set<T>();
     }
 
-    public async Task<IEnumerable<T>> GetAll(string? includeProperties = null)
+    public async Task<IEnumerable<T>> GetAll(Expression<Func<T, bool>>? filter = null, string? includeProperties = null)
     {
         IQueryable<T> query = _dbSet;
+
+        if (filter is not null)
+        {
+            query = query.Where(filter);
+        }
+
         if (!string.IsNullOrEmpty(includeProperties))
         {
             foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
@@ -29,9 +35,10 @@ public class Repository<T> : IRepository<T> where T : class
         return await query.ToListAsync();
     }
 
-    public async Task<T?> GetFirstOrDefault(Expression<Func<T, bool>> filter, string? includeProperties = null)
+    public async Task<T?> GetFirstOrDefault(Expression<Func<T, bool>> filter, string? includeProperties = null, bool tracked = false)
     {
-        IQueryable<T> query = _dbSet;
+        IQueryable<T> query = tracked ? _dbSet : _dbSet.AsNoTracking();
+
         if (!string.IsNullOrEmpty(includeProperties))
         {
             foreach (var includeProperty in includeProperties.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))

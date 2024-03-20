@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Security.Claims;
 using BulkyBook.DataAccess.Repository.Interfaces;
 using BulkyBook.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BulkyBookWeb.Areas.Customer.Controllers;
@@ -25,11 +27,40 @@ public class HomeController : Controller
         return View(products);
     }
 
-    public async Task<IActionResult> Details(int id)
+    public async Task<IActionResult> Details(int productId)
     {
-        var product = await _unitOfWork.ProductRepository.GetFirstOrDefault(p => p.Id == id, includeProperties: "Category");
+        var shoppingCart = new ShoppingCart
+        {
+            Product = await _unitOfWork.ProductRepository.GetFirstOrDefault(p => p.Id == productId, includeProperties: "Category") ?? new Product(),
+            ProductId = productId,
+            Count = 1
+        };
 
-        return View(product);
+        return View(shoppingCart);
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> Details(ShoppingCart shoppingCart)
+    {
+        var userClaimsIdentity = (ClaimsIdentity)User.Identity;
+        var userId = userClaimsIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        shoppingCart.ApplicationUserId = userId;
+
+        var existingShoppingCart = await _unitOfWork.ShoppingCartRepository.GetFirstOrDefault(p => p.ApplicationUserId == userId && p.ProductId == shoppingCart.ProductId);
+        if (existingShoppingCart is not null)
+        {
+            existingShoppingCart.Count += shoppingCart.Count;
+            _unitOfWork.ShoppingCartRepository.Update(existingShoppingCart);
+        }
+        else
+        {
+            _unitOfWork.ShoppingCartRepository.Add(shoppingCart);
+        }
+
+        await _unitOfWork.ShoppingCartRepository.SaveAsync();
+
+        return RedirectToAction(nameof(Index));
     }
 
     public IActionResult Privacy()
